@@ -100,9 +100,13 @@ void Print() {
     last_millis = millis();
 }
 
-void setup() {
-    Serial1.begin(115200, SERIAL_8N1, 17, 16); // Rx = 17 Tx = 16
+void serva();
 
+void setup() {
+    // serva();
+    Serial1.begin(115200, SERIAL_8N1, 17, 16); // Rx = 17 Tx = 16
+    
+    
     i2c_config_t conf_slave;
     conf_slave.mode = I2C_MODE_SLAVE;
     conf_slave.sda_io_num = sda_pin;
@@ -160,6 +164,8 @@ void setup() {
     fmt::print("{}'s Robotka '{}' with {} mV started!\n", cfg.owner, cfg.name, rkBatteryVoltageMv());
     rkLedYellow(true); // robot je připraven
 
+    serva(); // až za rkSetup(cfg); 
+
     while (true) {
 
         if (rkButtonUp(true)) {
@@ -199,5 +205,26 @@ void setup() {
         }  
         delay(10);           
 
+    }
+}
+
+void serva() {
+
+        for (int i = 1; i < 5; i++) {  // fungují 
+        rkServosSetPosition(i, 90);
+        printf("1, %i\n", i);
+        delay(1000);
+    }
+
+    for (int i = 1; i < 5; i++) {
+        rkServosSetPosition(i, 0);
+        printf("1, %i\n", i);
+        delay(1000);
+    }
+
+    for (int i = 1; i < 5; i++) {
+        rkServosSetPosition(i, -90);
+        printf("1, %i\n", i);
+        delay(1000);
     }
 }
