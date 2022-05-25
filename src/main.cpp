@@ -30,6 +30,7 @@ uint8_t DataToSend[] = {11, 12, 13, 14, 21, 22, 23, 24};
 
 
 unsigned long startTime = 0; // zacatek programu 
+const bool SERVO = false;
 
 unsigned long last_millis = 0;
 bool finding = false; // našel kostku
@@ -55,7 +56,7 @@ void blink() { // blikani zadanou LED
 
 void stopTime() { // STOP jizde po x milisec 
     while(true) {
-        if (( millis() - startTime ) > 4000) { // konci cca o 700ms driv 
+        if (( millis() - startTime ) > 400000) { // konci cca o 700ms driv 
             printf("cas vyprsel: ");
             printf("%lu, %lu \n", startTime, millis() );
             rkSmartLedsRGB(0, 255, 0, 0);
@@ -179,7 +180,8 @@ void setup() {
     fmt::print("{}'s Robotka '{}' with {} mV started!\n", cfg.owner, cfg.name, rkBatteryVoltageMv());
     rkLedYellow(true); // robot je připraven
 
-    serva(); // až za rkSetup(cfg); 
+    if(SERVO)
+        serva(); // až za rkSetup(cfg); 
 
     while (true) {
 
@@ -211,12 +213,15 @@ void setup() {
         
         if (Serial1.available() > 0) { 
             byte readData[10]= { 1 }; //The character array is used as buffer to read into.
-            int x = Serial1.readBytes(readData, 8); //It require two things, variable name to read into, number of bytes to read.
-            Serial.print("bytes: "); 
-            Serial.println(x); //display number of character received in readData variable.
-            for(int i = 0; i<10; i++) {
-              //  printf("i: %i, ", readData[i]); // ****************
+            int x = Serial1.readBytes(readData, 10); //It require two things, variable name to read into, number of bytes to read.
+            printf("bytes: "); 
+            // Serial.println(x); //display number of character received in readData variable.
+            printf("h: %i, ", readData[0]);
+            printf("h: %i, ", readData[1]);
+            for(int i = 2; i<10; i++) {
+                printf("%i: %i, ", i-2, readData[i]); // ****************
             }
+            printf("\n ");
         }  
         delay(10);           
 
