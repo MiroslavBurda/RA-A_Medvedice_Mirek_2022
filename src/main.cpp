@@ -29,7 +29,7 @@ uint8_t DataToSend[] = {11, 12, 13, 14, 21, 22, 23, 24};
 
 
 
-    //.clk_flags = 0, 
+unsigned long startTime = 0; // zacatek programu 
 
 unsigned long last_millis = 0;
 bool finding = false; // našel kostku
@@ -50,6 +50,18 @@ void blink() { // blikani zadanou LED
         // delay(500);
         rkSmartLedsRGB(3, 0, 0, 0);
         delay(500); 
+    }
+}
+
+void stopTime() { // STOP jizde po x milisec 
+    while(true) {
+        if (( millis() - startTime ) > 4000) { // konci cca o 700ms driv 
+            printf("cas vyprsel: ");
+            printf("%lu, %lu \n", startTime, millis() );
+            rkSmartLedsRGB(0, 255, 0, 0);
+            while(true); // tady musi program skoncit po uplynuti limitu  
+        }
+        delay(10); 
     }
 }
 
@@ -103,6 +115,8 @@ void Print() {
 void serva();
 
 void setup() {
+    startTime = millis();
+    rkSmartLedsRGB(0, 0, 0, 0);
     // serva();
     Serial1.begin(115200, SERIAL_8N1, 17, 16); // Rx = 17 Tx = 16
     
@@ -159,6 +173,7 @@ void setup() {
 
     std::thread t1(rkIr); // prumerne hodnoty z IR v samostatném vlákně
     std::thread t2(blink); // prumerne hodnoty z IR v samostatném vlákně
+    std::thread t3(stopTime); // prumerne hodnoty z IR v samostatném vlákně
 
     delay(300);
     fmt::print("{}'s Robotka '{}' with {} mV started!\n", cfg.owner, cfg.name, rkBatteryVoltageMv());
@@ -200,7 +215,7 @@ void setup() {
             Serial.print("bytes: "); 
             Serial.println(x); //display number of character received in readData variable.
             for(int i = 0; i<10; i++) {
-                printf("i: %i, ", readData[i]); 
+              //  printf("i: %i, ", readData[i]); // ****************
             }
         }  
         delay(10);           
@@ -212,19 +227,19 @@ void serva() {
 
         for (int i = 1; i < 5; i++) {  // fungují 
         rkServosSetPosition(i, 90);
-        printf("1, %i\n", i);
+        printf("servo %i\n", i);
         delay(1000);
     }
 
     for (int i = 1; i < 5; i++) {
         rkServosSetPosition(i, 0);
-        printf("1, %i\n", i);
+        printf("servo, %i\n", i);
         delay(1000);
     }
 
     for (int i = 1; i < 5; i++) {
         rkServosSetPosition(i, -90);
-        printf("1, %i\n", i);
+        printf("servo, %i\n", i);
         delay(1000);
     }
 }
