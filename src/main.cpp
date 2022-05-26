@@ -45,6 +45,9 @@ int IrL[] = { 0, 0, 0, 0 }; // pole pro levy ultrazvuk
 int IrR[] = { 0, 0, 0, 0 }; // pole pro pravy ultrazvuk
 int k = 0; // pocitadlo pro IR
 
+static constexpr const uint32_t STOP_ROBOT_AFTER_REBOOT_MAGIC = 0x42FAB321;
+static RTC_NOINIT_ATTR volatile uint32_t stopRobotPersistentTrigger;
+
 void blink() { // blikani zadanou LED
     while (true) { 
         // rkSmartLedsRGB(3, 255, 255, 255);
@@ -60,7 +63,12 @@ void stopTime() { // STOP jizde po x milisec
             printf("cas vyprsel: ");
             printf("%lu, %lu \n", startTime, millis() );
             rkSmartLedsRGB(0, 255, 0, 0);
-            while(true); // tady musi program skoncit po uplynuti limitu  
+            // tady musi program skoncit po uplynuti limitu
+
+            // Nastavíme kouzelnou hodnotu do triggeru, která bude přečtená v mainu po restartu.
+            // Restart zařídí STM32, protože ESP32 v deep sleepu přestane odpovídat, a zárovneň zastaví motory a tak.
+            stopRobotPersistentTrigger = STOP_ROBOT_AFTER_REBOOT_MAGIC;
+            esp_deep_sleep_start();
         }
         delay(10); 
     }
@@ -149,6 +157,16 @@ void setup() {
     cfg.motor_enable_failsafe = false;
     cfg.rbcontroller_app_enable = false; // nepoužívám mobilní aplikaci (lze ji vypnout - kód se zrychlí, ale nelze ji odstranit z kódu -> kód se nezmenší)
     rkSetup(cfg);
+
+    // Trigger byl nastavený před restartem. Vynulejeme ho (aby už neplatil po dalším restartu)
+    // a uděláme nekonečnou smyčku, aby robot stál. MUSÍ BÝT AŽ PO rkSetup, ABY ESP32 ODPOVÍDALO STM32.
+    if (stopRobotPersistentTrigger == STOP_ROBOT_AFTER_REBOOT_MAGIC) {
+        stopRobotPersistentTrigger = 0;
+        printf("Stop trigger set, waiting forever\n");
+        while (true) {
+            vTaskDelay(1000);
+        }
+    }
 
     if (!SerialBT.begin("Burda_ctverec")) //Bluetooth device name; zapnutí BT musí být až za rkSetup(cfg); jinak to nebude fungovat a bude to tvořit reset ESP32
     {
