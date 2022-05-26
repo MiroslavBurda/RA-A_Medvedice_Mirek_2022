@@ -13,6 +13,12 @@ void Print() {
     last_millis = millis();
 }
 
+
+int l = 0; // hodnta leveho ultrazvuku
+int r = 0; // hodnota praveho ultrazvuku
+int IrL[] = { 0, 0, 0, 0 }; // pole pro levy ultrazvuk
+int IrR[] = { 0, 0, 0, 0 }; // pole pro pravy ultrazvuk
+
 void rkIr() { // prumerovani IR
     while (true) {
         k++;
