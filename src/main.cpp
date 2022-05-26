@@ -2,7 +2,6 @@
 #include "robotka.h"
 #include <thread>
 
-
 BluetoothSerial SerialBT;
 
 //************************************************************************************************
@@ -28,9 +27,8 @@ uint8_t DataToSend[] = {11, 12, 13, 14, 21, 22, 23, 24};
 //*************************************************************************************************************
 
 
-
 unsigned long startTime = 0; // zacatek programu 
-const bool SERVO = true;
+const bool SERVO = false;
 
 unsigned long last_millis = 0;
 bool finding = false; // našel kostku
@@ -56,7 +54,7 @@ void blink() { // blikani zadanou LED
 
 void stopTime() { // STOP jizde po x milisec 
     while(true) {
-        if (( millis() - startTime ) > 30000) { // konci cca o 700ms driv 
+        if (( millis() - startTime ) > 3000000) { // konci cca o 700ms driv 
             printf("cas vyprsel: ");
             printf("%lu, %lu \n", startTime, millis() );
             rkSmartLedsRGB(0, 255, 0, 0);
@@ -67,59 +65,11 @@ void stopTime() { // STOP jizde po x milisec
     }
 }
 
-void rkIr() { // prumerovani IR
-    while (true) {
-        k++;
-        if (k == 30000)
-            k = 0;
-        switch (k % 4) {
-        case 0:
-            IrL[0] = rkIrLeft();
-            IrR[0] = rkIrRight();
-            break;
-        case 1:
-            IrL[1] = rkIrLeft();
-            IrR[1] = rkIrRight();
-            break;
-        case 2:
-            IrL[2] = rkIrLeft();
-            IrR[2] = rkIrRight();
-            break;
-        case 3:
-            IrL[3] = rkIrLeft();
-            IrR[3] = rkIrRight();
-            break;
-        default:
-            printf("Chyba v prikazu switch");
-            break;
-        }
-        l = (IrL[0] + IrL[1] + IrL[2] + IrL[3]) / 4;
-        r = (IrR[0] + IrR[1] + IrR[2] + IrR[3]) / 4;
-        delay(10);
-    }
-}
-
-void Print() {
-    printf("L: %d   R: %d  UltraUp: %i  Ultradown: %i \n", l, r, UltraUp, UltraDown);
-    SerialBT.print("L: ");
-    SerialBT.print(l);
-    SerialBT.print("  R: ");
-    SerialBT.print(r);
-    SerialBT.print("  UltraUP: ");
-    SerialBT.print(UltraUp);
-    SerialBT.print("  UltraDown: ");
-    SerialBT.print(UltraDown);
-    SerialBT.print("  Min: ");
-    SerialBT.println(Min);
-    last_millis = millis();
-}
-
 void serva();
 
 void setup() {
-    // serva();
-    Serial1.begin(115200, SERIAL_8N1, 17, 16); // Rx = 17 Tx = 16
     
+    Serial1.begin(115200, SERIAL_8N1, 17, 16); // Rx = 17 Tx = 16 
     
     i2c_config_t conf_slave;
     conf_slave.mode = I2C_MODE_SLAVE;
@@ -160,7 +110,9 @@ void setup() {
     rkLedBlue(false);
     rkLedYellow(true);
     startTime = millis();
-    rkSmartLedsRGB(0, 0, 0, 0);
+    rkSmartLedsRGB(0, 0, 0, 0);    
+    rkServosSetPosition(1, 65);   // vychozi pozice praveho serva nahore - až za rkSetup(cfg); 
+    rkServosSetPosition(2, -60);  // vychozi pozice leveho serva nahore
 
     // rkMotorsSetSpeed(100, 100); // testovaci 
 
@@ -186,7 +138,7 @@ void setup() {
         return true;
     });
 
-    std::thread t1(rkIr); // prumerne hodnoty z IR v samostatném vlákně
+    // std::thread t1(rkIr); // prumerne hodnoty z IR v samostatném vlákně
     std::thread t2(blink); // prumerne hodnoty z IR v samostatném vlákně
     std::thread t3(stopTime); // prumerne hodnoty z IR v samostatném vlákně
 
@@ -242,23 +194,44 @@ void setup() {
     }
 }
 
-void serva() {
+// void serva() { // testovani maximalnich poloh všech serv 
 
-        for (int i = 1; i < 5; i++) {  // fungují 
-        rkServosSetPosition(i, 90);
-        printf("servo %i\n", i);
-        delay(1000);
+//         for (int i = 1; i < 5; i++) {  // fungují 
+//         rkServosSetPosition(i, 90);
+//         printf("servo %i\n", i);
+//         delay(1000);
+//     }
+
+//     for (int i = 1; i < 5; i++) {
+//         rkServosSetPosition(i, 0);
+//         printf("servo, %i\n", i);
+//         delay(1000);
+//     }
+
+//     for (int i = 1; i < 5; i++) {
+//         rkServosSetPosition(i, -90);
+//         printf("servo, %i\n", i);
+//         delay(1000);
+//     }
+// }
+
+void serva() { //nastavovani polohy serva 1
+    int k = 0 ; 
+    while(true) {
+
+        if (rkButtonLeft(true)) {
+            k -= 5;
+            //delay(300);
+        }
+
+        if (rkButtonRight(true)) {
+            k += 5;
+            //delay(300);
+        }
+
+        rkServosSetPosition(2, k);
+        printf("servo %i\n", k);
+        delay(100);
     }
 
-    for (int i = 1; i < 5; i++) {
-        rkServosSetPosition(i, 0);
-        printf("servo, %i\n", i);
-        delay(1000);
-    }
-
-    for (int i = 1; i < 5; i++) {
-        rkServosSetPosition(i, -90);
-        printf("servo, %i\n", i);
-        delay(1000);
-    }
 }
