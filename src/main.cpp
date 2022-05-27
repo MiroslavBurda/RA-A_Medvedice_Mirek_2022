@@ -22,7 +22,7 @@ const bool SERVO = false;
 
 void stopTime() { // STOP jizde po x milisec 
     while(true) {
-        if (( millis() - startTime ) > 3000000) { // konci cca o 700ms driv 
+        if (( millis() - startTime ) > 3000000) { // konci cca o 700ms driv real: 127000
             printf("cas vyprsel: ");
             printf("%lu, %lu \n", startTime, millis() );
             rkSmartLedsRGB(0, 255, 0, 0);
@@ -63,12 +63,12 @@ void setup() {
     rkSetup(cfg);
 
     rkLedBlue(true); // cekani na stisk 
-    while(true) {
-        printf("cekani na stisk Up\n");
+    printf("cekani na stisk Up\n");
+    while(true) {   
         if(rkButtonUp(true)) {
             break;
         }
-        delay(500);
+        delay(10);
     }
     rkLedBlue(false);
     rkLedYellow(true);
@@ -90,7 +90,7 @@ void setup() {
         for (int k = 0; k < 4; k++) {
             printf("DATA: %i \n", DataToReceive[k] );
         }        
-        delay(1000);          
+        delay(100);          
 
     }
 }
