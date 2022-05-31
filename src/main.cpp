@@ -84,11 +84,11 @@ void setup() {
     rkLedYellow(true);
     startTime = millis();
     rkSmartLedsRGB(0, 0, 0, 0);    
-    rkServosSetPosition(1, 65);   // vychozi pozice praveho serva nahore - až za rkSetup(cfg); 
-    rkServosSetPosition(2, -60);  // vychozi pozice leveho serva nahore
+    rkServosSetPosition(1, 0);   // vychozi pozice praveho serva nahore - až za rkSetup(cfg); 
+    rkServosSetPosition(2, 0);  // vychozi pozice leveho serva nahore
 
     std::thread t2(ultrasonic);  // vlakno pro prijimani a posilani dat z ultrazvuku
-    std::thread t3(stopTime);    // vlakno pro zastaveni po uplynuti casu 
+    // std::thread t3(stopTime);    // vlakno pro zastaveni po uplynuti casu 
 
     delay(300);
     fmt::print("{}'s Robotka '{}' with {} mV started!\n", cfg.owner, cfg.name, rkBatteryVoltageMv());
@@ -97,19 +97,20 @@ void setup() {
     int ii = 0; 
     while (true) {
         int res = i2c_slave_read_buffer(bus_num, DataToReceive, 4, pdMS_TO_TICKS(25)); 
-        printf("TAG1: %i, %i \n", ii++, res);
+       // printf("TAG1: %i, %i \n", ii++, res);
         for (int k = 0; k < 4; k++) {
-            printf("DATA: %i \n", DataToReceive[k] );
+            printf("DATA: %i ", DataToReceive[k] );
         }    
+        printf("\n " );
 
         if((DataToReceive[0] == 10) && (DataToReceive[1] == DataToReceive[2] )) {  // test hlavicky a shodnosti obou bytů 
-            for(int i = 1; i<3; i++) {
-                rkServosSetPosition(i, DataToReceive[i]);
-                printf("Servo%i: %i\n", i, DataToReceive[i]);
-            }
+                int servo = DataToReceive[1]-100;  
+                rkServosSetPosition(1, servo);
+                rkServosSetPosition(2, -servo);
+                printf("Servo1: %i, servo2: %i\n", servo, -servo);
         }
 
-        delay(1000); // cas, aby se serva nastavila do spravne polohy         
+        delay(100); // cas, aby se serva nastavila do spravne polohy         
 
     }
 }
