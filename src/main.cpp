@@ -2,6 +2,8 @@
 #include <thread>
 #include <driver/i2c.h>
 
+// todo jak se vymaže buffer? nebo: jak vím, že jsem na konci/ na aktuálních hodnotách 
+
 #define RETURN_IF_ERR(x) do {                                         \
         esp_err_t __err_rc = (x);                                       \
         if (__err_rc != ESP_OK) {                                       \
@@ -13,16 +15,17 @@ gpio_num_t sda_pin = GPIO_NUM_21;
 gpio_num_t scl_pin = GPIO_NUM_22; 
 uint8_t address = 0x04;
 i2c_port_t bus_num = I2C_NUM_0; 
+uint8_t header = 10; // hlavicka pro vstup i vystup  
 uint8_t DataToReceive[] = {2, 2, 2, 2};
 size_t len = sizeof(DataToReceive);
-uint8_t DataToSend[] = {11, 12, 13, 14, 21, 22, 23, 24};
+uint8_t DataToSend[3] = {0}; // hlavicka; nejblizsi vzdalenost; cislo ultrazvuku, ktery ji nameril 
 
 unsigned long startTime = 0; // zacatek programu 
 const bool SERVO = false;
 
 void stopTime() { // STOP jizde po x milisec 
     while(true) {
-        if (( millis() - startTime ) > 3000000) { // konci cca o 700ms driv real: 127000
+        if (( millis() - startTime ) > 127000) { // konci cca o 700ms driv real: 127000
             printf("cas vyprsel: ");
             printf("%lu, %lu \n", startTime, millis() );
             rkSmartLedsRGB(0, 255, 0, 0);
@@ -31,6 +34,13 @@ void stopTime() { // STOP jizde po x milisec
         }
         delay(10); 
     }
+}
+
+void ultrasonic() {
+    DataToSend[0] = header;
+    DataToSend[1] = 3;
+    DataToSend[2] = 60; // testovaci data 
+    delay(500);
 }
 
 void setup() {
@@ -77,7 +87,8 @@ void setup() {
     rkServosSetPosition(1, 65);   // vychozi pozice praveho serva nahore - až za rkSetup(cfg); 
     rkServosSetPosition(2, -60);  // vychozi pozice leveho serva nahore
 
-    std::thread t3(stopTime); // vlakno pro zastaveni po uplynuti casu 
+    std::thread t2(ultrasonic);  // vlakno pro prijimani a posilani dat z ultrazvuku
+    std::thread t3(stopTime);    // vlakno pro zastaveni po uplynuti casu 
 
     delay(300);
     fmt::print("{}'s Robotka '{}' with {} mV started!\n", cfg.owner, cfg.name, rkBatteryVoltageMv());
@@ -89,8 +100,16 @@ void setup() {
         printf("TAG1: %i, %i \n", ii++, res);
         for (int k = 0; k < 4; k++) {
             printf("DATA: %i \n", DataToReceive[k] );
-        }        
-        delay(100);          
+        }    
+
+        if((DataToReceive[0] == 10) && (DataToReceive[1] == DataToReceive[2] )) {  // test hlavicky a shodnosti obou bytů 
+            for(int i = 1; i<3; i++) {
+                rkServosSetPosition(i, DataToReceive[i]);
+                printf("Servo%i: %i\n", i, DataToReceive[i]);
+            }
+        }
+
+        delay(1000); // cas, aby se serva nastavila do spravne polohy         
 
     }
 }
