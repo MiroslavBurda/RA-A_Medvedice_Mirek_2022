@@ -125,6 +125,9 @@ void ultrasonic() {
                         //if(startState) {
                             printf("Souper se prilis priblizil...");
                             //TODO zde je potreba zavolat funkci, která zastaví robota 
+                            DataToSend[0] = 2;
+                            int written = i2c_slave_write_buffer(bus_num, DataToSend, 8, pdMS_TO_TICKS(25));
+
                         //}
                     }
                     for (size_t i = 0; i < 8; i++) {
@@ -193,7 +196,9 @@ void setup() {
     }
     rkSmartLedsRGB(7, 0, 0, 0);  
     printf("startovací lanko vytaženo\n");
-
+    DataToSend[0] = 1;  // signal, ze se robot ma rozjet
+    int writ = i2c_slave_write_buffer(bus_num, DataToSend, 8, pdMS_TO_TICKS(25));
+    //TODO otestovat poradne 
     std::thread t2(ultrasonic);  // vlakno pro prijimani a posilani dat z ultrazvuku
     // std::thread t3(stopTime);    // vlakno pro zastaveni po uplynuti casu 
 
