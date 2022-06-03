@@ -120,7 +120,7 @@ void ultrasonic() {
                     int min0 = min_arr(readData0, pozice0); 
                     int min1 = min_arr(readData1, pozice1);
                     int min2 = min_arr(readData2, pozice2); 
-                    if ( (min0 == min1 == min2) && (min0 < minVzdal) ) {
+                    if ( (min0 == min1) && (min0 == min2) && (min0 < minVzdal) ) {
                         printf("Souper blizi...");
                         //if(startState) {
                             printf("Souper se prilis priblizil...");
