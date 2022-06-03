@@ -20,8 +20,38 @@ uint8_t DataToReceive[] = {2, 2, 2, 2};
 size_t len = sizeof(DataToReceive);
 uint8_t DataToSend[3] = {0}; // hlavicka; nejblizsi vzdalenost; cislo ultrazvuku, ktery ji nameril 
 
+
+// Ultrasonic 
+const byte readSize = 8;
+const byte headerU = 250; //hlavicka zpravy ma tvar: {250, 250+k}, k = 1 ... 3    
+constexpr byte msgHeader[3] = {251, 252, 253};
+const byte minVzdal = 50; // minimalni vzdalenost, na ktere se sousedni robot muze priblizit, if se priblizi vic, tak abort();
+
+byte readData0[readSize]= {0}; //The character array is used as buffer to read into.
+byte readData1[readSize]= {0};
+byte readData2[readSize]= {0};
+
 unsigned long startTime = 0; // zacatek programu 
 const bool SERVO = false;
+
+/**
+ * @brief Funkce na vyhledání nejmenší hodnoty z byte pole. !!! Nulu to nebere jako nejmenší !!!
+ * 
+ * @param arr   Ukazatel na pole hodnot
+ * @param index Adresa kam má funkce vrátit pozici nejmenší hodnoty
+ * @return byte Vrací nejmenší hodnotu pole 
+ */
+byte min_arr(byte *arr, int &index){
+    byte tmp = 255;
+    index = -1;
+    for (size_t i = 0; i < 8; i++) {
+        if (arr[i] < tmp && arr[i] != 0) {
+            tmp = arr[i];
+            index = i;
+        }
+    }
+    return tmp;
+}
 
 void stopTime() { // STOP jizde po x milisec 
     while(true) {
@@ -36,11 +66,76 @@ void stopTime() { // STOP jizde po x milisec
     }
 }
 
+void ultrasonic_color(byte dis, size_t i) {
+    if (dis > 200 || dis == 0) {
+        rkSmartLedsRGB(i, 0, 50, 0);
+    } else if (dis > 180) {
+        rkSmartLedsRGB(i, 20, 50, 0);
+    } else if (dis > 150) {
+        rkSmartLedsRGB(i, 35, 50, 0);
+    } else if (dis > 120) {
+        rkSmartLedsRGB(i, 50, 50, 0);
+    } else if (dis > 100) {
+        rkSmartLedsRGB(i, 50, 35, 0);
+    } else if (dis > 80) {
+        rkSmartLedsRGB(i, 50, 20, 0);
+    } else if (dis > 60) {
+        rkSmartLedsRGB(i, 204, 102, 0);
+    } else if (dis > 50) {
+        rkSmartLedsRGB(i, 250, 60, 0);
+    } else {
+        rkSmartLedsRGB(i, 50, 0, 0);
+    } 
+}
+
 void ultrasonic() {
-    DataToSend[0] = header;
-    DataToSend[1] = 3;
-    DataToSend[2] = 60; // testovaci data 
-    delay(500);
+    printf("Ultrasonic \n");
+    rkSmartLedsRGB(0, 0, 50, 0);  // kontrola led pásku --> zapljsem koukátko
+    int pozice0, pozice1, pozice2;
+    while (true) {
+            if (Serial1.available() > 0) { 
+                int temp = Serial1.read();
+                if(temp == headerU) {
+                    // printf("bytes: %i \n", header); 
+                    if (Serial1.available() > 0) {
+                        int head = Serial1.read();
+                        printf("head: %i ", head); 
+                        switch (head) {
+                        case msgHeader[0]: 
+                            Serial1.readBytes(readData0, readSize); //It require two things, variable name to read into, number of bytes to read.
+                            for(int i = 0; i<8; i++) { printf("%i: %i, ", i, readData0[i]); } printf("\n ");
+                            break;        
+                        case msgHeader[1]:
+                            Serial1.readBytes(readData1, readSize); 
+                            for(int i = 0; i<8; i++) { printf("%i: %i, ", i, readData1[i]); } printf("\n ");
+                            break;        
+                        case msgHeader[2]:
+                            Serial1.readBytes(readData2, readSize); 
+                            for(int i = 0; i<8; i++) { printf("%i: %i, ", i, readData2[i]); } printf("\n ");
+                            break;
+                        default:
+                            printf("Nenasel druhy byte hlavicky !! "); 
+                        }
+                    }
+                    int min0 = min_arr(readData0, pozice0); 
+                    int min1 = min_arr(readData1, pozice1);
+                    int min2 = min_arr(readData2, pozice2); 
+                    if ( (min0 == min1 == min2) && (min0 < minVzdal) ) {
+                        printf("Souper blizi...");
+                        //if(startState) {
+                            printf("Souper se prilis priblizil...");
+                            //TODO zde je potreba zavolat funkci, která zastaví robota 
+                        //}
+                    }
+                    for (size_t i = 0; i < 8; i++) {
+                        ultrasonic_color(readData0[i], i);
+                    }
+                    
+                }
+             
+        }
+        delay(50);            
+    }
 }
 
 void setup() {
@@ -72,6 +167,9 @@ void setup() {
     cfg.rbcontroller_app_enable = false; // nepoužívám mobilní aplikaci (lze ji vypnout - kód se zrychlí, ale nelze ji odstranit z kódu -> kód se nezmenší)
     rkSetup(cfg);
 
+    for (size_t i = 0; i < 8; i++) {     // vymyzání LED pásku
+        rkSmartLedsRGB(i, 0, 0, 0);
+    }
     rkLedBlue(true); // cekani na stisk 
     printf("cekani na stisk Up\n");
     while(true) {   
@@ -83,9 +181,18 @@ void setup() {
     rkLedBlue(false);
     rkLedYellow(true);
     startTime = millis();
-    rkSmartLedsRGB(0, 0, 0, 0);    
+
     rkServosSetPosition(1, 0);   // vychozi pozice praveho serva nahore - až za rkSetup(cfg); 
     rkServosSetPosition(2, 0);  // vychozi pozice leveho serva nahore
+
+    // čekání na vytažení startovacího lanka
+    printf("čekaní na vytažení startovacího lanka\n");
+    rkSmartLedsRGB(7, 50, 0, 0);  
+    while (rkButtonLeft(true)) {
+        delay(10);
+    }
+    rkSmartLedsRGB(7, 0, 0, 0);  
+    printf("startovací lanko vytaženo\n");
 
     std::thread t2(ultrasonic);  // vlakno pro prijimani a posilani dat z ultrazvuku
     // std::thread t3(stopTime);    // vlakno pro zastaveni po uplynuti casu 
@@ -99,9 +206,9 @@ void setup() {
         int res = i2c_slave_read_buffer(bus_num, DataToReceive, 4, pdMS_TO_TICKS(25)); 
        // printf("TAG1: %i, %i \n", ii++, res);
         for (int k = 0; k < 4; k++) {
-            printf("DATA: %i ", DataToReceive[k] );
+            //printf("DATA: %i ", DataToReceive[k] );
         }    
-        printf("\n " );
+        //printf("\n " );
 
         if((DataToReceive[0] == 10) && (DataToReceive[1] == DataToReceive[2] )) {  // test hlavicky a shodnosti obou bytů 
                 int servo = DataToReceive[1]-100;  
