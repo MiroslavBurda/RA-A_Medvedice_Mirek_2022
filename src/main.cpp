@@ -2,6 +2,16 @@
 #include <thread>
 #include <driver/i2c.h>
 
+/* Spouštění robota Medvědice 
+1) Start programu na kostce - TCA-AMedv1c.c
+2) Reset RBCX (např. reset tlačítko přímo na ESP32)
+3) Zkontrolovat zastrčení startovacího lanka 
+4) Zmáčknout tlačítko Up na kostce, potom vybrat barvu (tlačítko Down)
+5) Zmáčknout Up na RBCX - rozsvítí se žlutá dioda na RBCX a červená dole na LED pásku
+
+*/
+
+
 // todo jak se vymaže buffer? nebo: jak vím, že jsem na konci/ na aktuálních hodnotách 
 
 #define RETURN_IF_ERR(x) do {                                         \
@@ -185,8 +195,8 @@ void setup() {
     rkLedYellow(true);
     startTime = millis();
 
-    rkServosSetPosition(1, 0);   // vychozi pozice praveho serva nahore - až za rkSetup(cfg); 
-    rkServosSetPosition(2, 0);  // vychozi pozice leveho serva nahore
+    rkServosSetPosition(1, 65);   // vychozi pozice praveho serva nahore - až za rkSetup(cfg); 
+    rkServosSetPosition(2, -65);  // vychozi pozice leveho serva nahore
 
     // čekání na vytažení startovacího lanka
     printf("čekaní na vytažení startovacího lanka\n");
