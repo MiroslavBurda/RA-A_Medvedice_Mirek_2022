@@ -4,7 +4,7 @@
 #include <driver/uart.h>
 
 /* Spouštění robota Medvědice 
-1) Start programu na kostce - TCA-AMedv1c.c
+1) Start programu na kostce - TCA-AMedv1e.c
 2) Reset RBCX (např. reset tlačítko přímo na ESP32)
 3) Zkontrolovat zastrčení startovacího lanka 
 4) Zmáčknout tlačítko Up na kostce, potom vybrat barvu (tlačítko Down)
@@ -110,7 +110,7 @@ void ultrasonic() {
                     // printf("bytes: %i \n", header); 
                     if (Serial1.available() > 0) {
                         int head = Serial1.read();
-                        printf("head: %i ", head); 
+                        //printf("head: %i ", head); 
                         switch (head) {
                         case msgHeader[0]: 
                             Serial1.readBytes(readData0, readSize); //It require two things, variable name to read into, number of bytes to read.
@@ -132,7 +132,7 @@ void ultrasonic() {
                     int min1 = min_arr(readData1, pozice1);
                     int min2 = min_arr(readData2, pozice2); 
                     if ( (min0 == min1) && (min0 == min2) && (min0 < minVzdal) ) {
-                        printf("Souper blizi...");
+                        //printf("Souper blizi...");
                         //if(startState) {
                             printf("Souper se prilis priblizil...");
                             //TODO zde je potreba zavolat funkci, která zastaví robota 
