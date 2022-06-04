@@ -1,6 +1,7 @@
 #include "robotka.h"
 #include <thread>
 #include <driver/i2c.h>
+#include <driver/uart.h>
 
 /* Spouštění robota Medvědice 
 1) Start programu na kostce - TCA-AMedv1c.c
@@ -117,11 +118,11 @@ void ultrasonic() {
                             break;        
                         case msgHeader[1]:
                             Serial1.readBytes(readData1, readSize); 
-                            for(int i = 0; i<8; i++) { printf("%i: %i, ", i, readData1[i]); } printf("\n ");
+                            //for(int i = 0; i<8; i++) { printf("%i: %i, ", i, readData1[i]); } printf("\n ");
                             break;        
                         case msgHeader[2]:
                             Serial1.readBytes(readData2, readSize); 
-                            for(int i = 0; i<8; i++) { printf("%i: %i, ", i, readData2[i]); } printf("\n ");
+                            //for(int i = 0; i<8; i++) { printf("%i: %i, ", i, readData2[i]); } printf("\n ");
                             break;
                         default:
                             printf("Nenasel druhy byte hlavicky !! "); 
@@ -153,7 +154,6 @@ void ultrasonic() {
 
 void setup() {
     
-    Serial1.begin(115200, SERIAL_8N1, 17, 16); // Rx = 17 Tx = 16 
     
     i2c_config_t conf_slave;
     conf_slave.mode = I2C_MODE_SLAVE;
@@ -195,8 +195,8 @@ void setup() {
     rkLedYellow(true);
     startTime = millis();
 
-    rkServosSetPosition(1, 65);   // vychozi pozice praveho serva nahore - až za rkSetup(cfg); 
-    rkServosSetPosition(2, -65);  // vychozi pozice leveho serva nahore
+    rkServosSetPosition(1, -10);   // vychozi pozice praveho serva nahore - až za rkSetup(cfg); 
+    rkServosSetPosition(2, 10);  // vychozi pozice leveho serva nahore
 
     // čekání na vytažení startovacího lanka
     printf("čekaní na vytažení startovacího lanka\n");
@@ -206,10 +206,15 @@ void setup() {
     }
     rkSmartLedsRGB(7, 0, 0, 0);  
     printf("startovací lanko vytaženo\n");
+    delay(5000);
     DataToSend[0] = 1;  // signal, ze se robot ma rozjet
     int writ = i2c_slave_write_buffer(bus_num, DataToSend, 8, pdMS_TO_TICKS(25));
     //TODO otestovat poradne 
+    
+    Serial1.begin(115200, SERIAL_8N1, 17, 16); // Rx = 17 Tx = 16 
+    
     std::thread t2(ultrasonic);  // vlakno pro prijimani a posilani dat z ultrazvuku
+    //uart_flush(UART_NUM_1);
     // std::thread t3(stopTime);    // vlakno pro zastaveni po uplynuti casu 
 
     delay(300);
