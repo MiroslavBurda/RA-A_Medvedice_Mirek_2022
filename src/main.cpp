@@ -195,9 +195,7 @@ void setup() {
     rkLedYellow(true);
     startTime = millis();
 
-    rkServosSetPosition(1, -10);   // vychozi pozice praveho serva nahore - až za rkSetup(cfg); 
-    rkServosSetPosition(2, 10);  // vychozi pozice leveho serva nahore
-
+    
     // čekání na vytažení startovacího lanka
     printf("čekaní na vytažení startovacího lanka\n");
     rkSmartLedsRGB(7, 50, 0, 0);  
@@ -206,7 +204,11 @@ void setup() {
     }
     rkSmartLedsRGB(7, 0, 0, 0);  
     printf("startovací lanko vytaženo\n");
-    delay(5000);
+    delay(1000);
+    
+    rkServosSetPosition(1, -10);   // vychozi pozice praveho serva nahore - až za rkSetup(cfg); 
+    rkServosSetPosition(2, 10);  // vychozi pozice leveho serva nahore
+
     DataToSend[0] = 1;  // signal, ze se robot ma rozjet
     int writ = i2c_slave_write_buffer(bus_num, DataToSend, 8, pdMS_TO_TICKS(25));
     //TODO otestovat poradne 
